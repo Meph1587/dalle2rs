@@ -50,6 +50,26 @@ impl Dalle2 {
         Ok(())
     }
 
+    pub async fn get_img_bytes(&self, imgs: Vec<Dalle2ImgData>) -> Result<Vec<Vec<u8>>> {
+
+        let mut  output = vec![];
+
+        for img in imgs {
+            let re = self.client.get(img.generation.image_path.clone());
+
+            let response = re.send().await?;
+
+            let img_bytes = response.error_for_status()?.bytes().await?.to_vec();
+            let decoder = webp::Decoder::new(&img_bytes);
+            let decoded = decoder.decode().unwrap().to_image();
+
+            output.push(decoded.as_bytes().to_vec())
+
+        }
+
+        Ok(output)
+    }
+
     pub async fn text2im(&self, prompt: &str, amount: u64) -> Result<Vec<Dalle2ImgData>> {
 
         let body = RequestBody {
@@ -132,6 +152,15 @@ mod tests {
         let p = "Qauntum Shadow, black thick fog, dark structures, ruins, sunrise, sunny, high-res pixel";
         let imgs = get_dalle2().text2im(p, 4).await.unwrap();
         let resp = get_dalle2().store_imgs(imgs, "./out/").await;
+        println!("resp: {:?}", resp);
+        assert!(resp.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_generate_and_get_bytes() {
+        let p = "Qauntum Shadow, black thick fog, dark structures, ruins, sunrise, sunny, high-res pixel";
+        let imgs = get_dalle2().text2im(p, 4).await.unwrap();
+        let resp = get_dalle2().get_img_bytes(imgs).await;
         println!("resp: {:?}", resp);
         assert!(resp.is_ok());
     }

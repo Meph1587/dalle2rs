@@ -1,5 +1,5 @@
 [package]
-name = "dalle2rs"
+name = "dalle2"
 version = "0.1.0"
 edition = "2021"
 
